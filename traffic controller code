@@ -1,0 +1,103 @@
+module Traffic_controller_system(X,clk,clr,hwy,cty);
+input X,clk,clr;
+output reg [1:0]hwy,cty;
+parameter r=2'b00;
+parameter y=2'b01;
+parameter g= 2'b10;
+parameter s0=3'b000;
+parameter s1=3'b001;
+parameter s2=3'b010;
+parameter s3=3'b011;
+parameter s4=3'b100;
+
+reg [2:0]state, next_state;
+
+initial
+begin
+state=s0;
+next_state=s0;
+hwy=g;
+cty=r;
+end
+
+always@(posedge clk) state=next_state;
+
+always@(state)
+case(state)
+s0: begin   
+    hwy=g;
+    cty=r;
+    end
+s1: begin   
+    hwy=y;
+    cty=r;
+    end
+s2: begin   
+    hwy=r;
+    cty=r;
+    end
+s3: begin   
+    hwy=r;
+    cty=g;
+    end
+s4: begin   
+    hwy=r;
+    cty=y;
+    end 
+ endcase
+    
+always@(posedge clk)
+begin
+if(clr==1) next_state= s0;
+else
+begin
+    case(state)
+        s0:begin if(X==0) next_state=s0;
+            else next_state=s1; end
+        s1: begin
+           #10 next_state=s2;
+            end
+         s2: begin
+            #5
+            next_state=s3;
+            end 
+         s3:begin if(X==0) next_state=s0;
+            else next_state=s4; end
+         s4:begin
+            #10
+            next_state=s0;
+            end 
+           default: next_state=s0;
+           endcase
+           end
+    end
+endmodule
+
+Testbench code:
+
+module traffic_test;
+ reg X,clk,clr;
+ wire [1:0]hwy,cty;
+ Traffic_controller_system uut (
+        .X(X), 
+        .clk(clk), 
+        .clr(clr), 
+        .hwy(hwy), 
+        .cty(cty)
+    );
+ initial
+ begin 
+ clk=0;
+ forever #5 clk=~clk;
+ end
+ 
+ initial
+ begin
+ #10 clr=0; X=0; 
+ #30 clr=1; X=0;
+ #50 clr=1;X=1;
+ #500 clr=1;X=0;
+ end
+ endmodule
+ 
+ 
